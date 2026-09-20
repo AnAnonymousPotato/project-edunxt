@@ -1,4 +1,4 @@
-# Project Edunxt 🎓
+# Redunxt 🎓
 
 A modern, fast, and unified client engine for the Edunext School ERP (v4).
 

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Edunxt - DPS Harni Portal</title>
-  <meta name="description" content="A fast, modern student dashboard for Edunext" />
+  <title>Redunxt - DPS Harni</title>
+  <meta name="description" content="Fast, private student portal for Edunext" />
   <meta name="theme-color" content="#09090b" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="/favicon.svg" />
@@ -23,10 +23,11 @@
               700: '#4338ca',
             },
             dark: {
-              900: '#09090b',
-              800: '#121216',
-              700: '#18181f',
-              600: '#272733',
+              950: '#09090b',
+              900: '#111115',
+              800: '#18181f',
+              700: '#23232c',
+              600: '#2e2e3a',
             }
           }
         }
@@ -40,117 +41,286 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #272733; border-radius: 9999px; }
   </style>
 </head>
-<body class="bg-dark-900 text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+<body class="bg-dark-950 text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
-  <!-- Top Navbar -->
-  <header class="sticky top-0 z-50 backdrop-blur-md bg-dark-900/80 border-b border-dark-600/60 px-4 py-3 sm:px-6">
-    <div class="max-w-5xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
-          <span class="text-white font-bold text-lg">E</span>
-        </div>
-        <div>
-          <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
-            Edunxt
-            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-100 border border-brand-500/30">DPS Harni</span>
-          </h1>
-          <p id="studentInfo" class="text-xs text-zinc-400">Loading student profile...</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button id="refreshBtn" onclick="fetchData(true)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-600 text-xs font-medium text-zinc-300 transition active:scale-95">
-          <svg id="refreshIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  <!-- ================= VIEW 1: LOGIN SCREEN ================= -->
+  <div id="loginView" class="flex-1 flex items-center justify-center p-4 sm:p-6">
+    <div class="w-full max-w-md bg-dark-900 border border-dark-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col gap-6">
+      
+      <!-- Brand Header -->
+      <div class="flex flex-col items-center text-center gap-2">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/25 mb-1">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
           </svg>
-          <span id="refreshText">Refresh</span>
-        </button>
-
-        <button id="installBtn" class="hidden px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium transition shadow-sm active:scale-95">
-          📲 Install App
-        </button>
+        </div>
+        <h1 class="text-xl font-bold text-white tracking-tight">Redunxt Portal</h1>
+        <p class="text-xs text-zinc-400">Delhi Public School Harni • Direct & Private Access</p>
       </div>
-    </div>
-  </header>
 
-  <!-- Main Container -->
-  <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+      <!-- Error Alert -->
+      <div id="loginError" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-center font-medium"></div>
 
-    <!-- Hero / Status Banner -->
-    <div class="rounded-2xl bg-gradient-to-br from-dark-800 to-dark-700/50 border border-dark-600/70 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
-      <div class="flex items-center gap-3">
-        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+      <!-- Login Form -->
+      <form id="loginForm" onsubmit="handleLogin(event)" class="flex flex-col gap-4">
         <div>
-          <h2 class="text-sm font-semibold text-white">Live Student Synchronizer</h2>
-          <p id="lastSyncTime" class="text-xs text-zinc-400">Checking Edunext servers...</p>
+          <label class="block text-xs font-semibold text-zinc-300 mb-1.5" for="loginUserId">User ID (Admission Number)</label>
+          <input 
+            type="text" 
+            id="loginUserId" 
+            required 
+            placeholder="e.g. 1234" 
+            autocomplete="username"
+            class="w-full bg-dark-800 border border-dark-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-zinc-300 mb-1.5" for="loginPassword">Password</label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="loginPassword" 
+              required 
+              placeholder="Your Edunext password" 
+              autocomplete="current-password"
+              class="w-full bg-dark-800 border border-dark-700 rounded-xl px-4 py-3 pr-11 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition"
+            />
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility()" 
+              class="absolute right-3 top-3 text-zinc-400 hover:text-zinc-200 text-xs p-1"
+            >
+              <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-zinc-400 mt-1">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="rememberMe" checked class="rounded border-dark-600 bg-dark-800 text-brand-600 focus:ring-0 w-4 h-4 cursor-pointer" />
+            <span>Remember me on this device</span>
+          </label>
+        </div>
+
+        <button 
+          type="submit" 
+          id="loginSubmitBtn"
+          class="w-full mt-2 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm transition shadow-lg shadow-brand-600/25 active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <span id="loginBtnText">Sign In</span>
+          <svg id="loginSpinner" class="hidden w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+        </button>
+      </form>
+
+      <div class="text-center text-[11px] text-zinc-500">
+        🔒 Private & Secure • Your credentials connect directly to Edunext and are never saved on external servers.
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VIEW 2: DASHBOARD SCREEN ================= -->
+  <div id="dashboardView" class="hidden flex-1 flex flex-col">
+    
+    <!-- Top Header -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-dark-950/80 border-b border-dark-700/60 px-4 py-3 sm:px-6">
+      <div class="max-w-5xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-md shadow-brand-500/20">
+            <span class="text-white font-bold text-sm">E</span>
+          </div>
+          <div>
+            <h1 class="text-sm sm:text-base font-bold tracking-tight text-white flex items-center gap-2">
+              Redunxt
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">DPS Harni</span>
+            </h1>
+            <p id="studentBadge" class="text-xs text-zinc-400">Loading profile...</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="fetchDashboardData(true)" id="refreshBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-900 hover:bg-dark-800 border border-dark-700 text-xs font-medium text-zinc-300 transition active:scale-95">
+            <svg id="refreshIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span id="refreshText">Refresh</span>
+          </button>
+
+          <button onclick="handleLogout()" class="px-3 py-1.5 rounded-lg bg-dark-900 hover:bg-rose-950/40 border border-dark-700 hover:border-rose-800/60 text-zinc-400 hover:text-rose-400 text-xs font-medium transition active:scale-95">
+            Log Out
+          </button>
         </div>
       </div>
-      <div class="flex items-center gap-4 text-xs text-zinc-300">
-        <div class="bg-dark-900/60 px-3 py-1.5 rounded-xl border border-dark-600/60">
-          <span class="text-zinc-500">Circulars:</span>
-          <span id="circularCount" class="font-bold text-white ml-1">-</span>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+
+      <!-- Status Bar -->
+      <div class="rounded-2xl bg-dark-900 border border-dark-700/80 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center gap-3">
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <div>
+            <h2 class="text-xs sm:text-sm font-semibold text-white">Live Student Dashboard</h2>
+            <p id="lastSyncLabel" class="text-[11px] text-zinc-400">Synchronized with school servers</p>
+          </div>
         </div>
-        <div class="bg-dark-900/60 px-3 py-1.5 rounded-xl border border-dark-600/60">
-          <span class="text-zinc-500">Messages:</span>
-          <span id="mailCount" class="font-bold text-white ml-1">-</span>
+        <div class="flex items-center gap-3 text-xs">
+          <div class="bg-dark-950 px-3 py-1.5 rounded-xl border border-dark-700 text-zinc-300">
+            <span class="text-zinc-500">Circulars:</span>
+            <span id="circularCount" class="font-bold text-white ml-1">-</span>
+          </div>
+          <div class="bg-dark-950 px-3 py-1.5 rounded-xl border border-dark-700 text-zinc-300">
+            <span class="text-zinc-500">Messages:</span>
+            <span id="mailCount" class="font-bold text-white ml-1">-</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Navigation Tabs -->
-    <div class="flex border-b border-dark-600/70 gap-2">
-      <button onclick="switchTab('circulars')" id="tab-circulars" class="px-4 py-2 text-sm font-semibold border-b-2 border-brand-500 text-white flex items-center gap-2 transition">
-        📢 Circulars
-        <span id="circularBadge" class="text-xs px-1.5 py-0.2 rounded-full bg-brand-500/20 text-brand-300">0</span>
-      </button>
-      <button onclick="switchTab('mailbox')" id="tab-mailbox" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 flex items-center gap-2 transition">
-        ✉️ Mailbox
-        <span id="mailBadge" class="text-xs px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-400">0</span>
-      </button>
-    </div>
+      <!-- Tabs Navigation -->
+      <div class="flex border-b border-dark-700 gap-2">
+        <button onclick="switchTab('circulars')" id="tab-circulars" class="px-4 py-2 text-sm font-semibold border-b-2 border-brand-500 text-white flex items-center gap-2 transition">
+          📢 Circulars
+          <span id="circularBadge" class="text-xs px-1.5 py-0.2 rounded-full bg-brand-500/20 text-brand-300">0</span>
+        </button>
+        <button onclick="switchTab('mailbox')" id="tab-mailbox" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 flex items-center gap-2 transition">
+          ✉️ Mailbox
+          <span id="mailBadge" class="text-xs px-1.5 py-0.2 rounded-full bg-dark-800 text-zinc-400">0</span>
+        </button>
+      </div>
 
-    <!-- Search / Filter Bar -->
-    <div class="relative">
-      <input type="text" id="searchInput" oninput="filterContent()" placeholder="Search notices, subjects, or teachers..." class="w-full bg-dark-800/80 border border-dark-600/80 rounded-xl px-4 py-2.5 pl-10 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition" />
-      <svg class="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    </div>
+      <!-- Search Bar -->
+      <div class="relative">
+        <input type="text" id="searchInput" oninput="filterContent()" placeholder="Search circulars, subject, or teachers..." class="w-full bg-dark-900 border border-dark-700 rounded-xl px-4 py-2.5 pl-10 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition" />
+        <svg class="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
 
-    <!-- Loading State -->
-    <div id="loadingState" class="flex flex-col items-center justify-center py-16 text-zinc-400">
-      <svg class="w-8 h-8 animate-spin text-brand-500 mb-3" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-      </svg>
-      <p class="text-sm font-medium">Connecting to Edunext servers...</p>
-    </div>
+      <!-- Loading State -->
+      <div id="dashLoading" class="flex flex-col items-center justify-center py-16 text-zinc-400">
+        <svg class="w-8 h-8 animate-spin text-brand-500 mb-3" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <p class="text-sm font-medium">Fetching your school records...</p>
+      </div>
 
-    <!-- Error State -->
-    <div id="errorState" class="hidden flex flex-col items-center justify-center py-12 p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center">
-      <p class="text-rose-400 font-semibold text-sm mb-1" id="errorMessage">Unable to fetch data.</p>
-      <p class="text-xs text-zinc-400 mb-4">Please verify your Vercel Environment Variables.</p>
-      <button onclick="fetchData(true)" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">Try Again</button>
-    </div>
+      <!-- Error State -->
+      <div id="dashError" class="hidden flex flex-col items-center justify-center py-12 p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center">
+        <p class="text-rose-400 font-semibold text-sm mb-1" id="dashErrorMessage">Session expired or connection failed.</p>
+        <button onclick="handleLogout()" class="mt-3 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">Log In Again</button>
+      </div>
 
-    <!-- Tab 1: Circulars Container -->
-    <div id="circularsContainer" class="hidden flex flex-col gap-3"></div>
+      <!-- Containers -->
+      <div id="circularsContainer" class="hidden flex flex-col gap-3"></div>
+      <div id="mailboxContainer" class="hidden flex flex-col gap-3"></div>
 
-    <!-- Tab 2: Mailbox Container -->
-    <div id="mailboxContainer" class="hidden flex flex-col gap-3"></div>
+    </main>
 
-  </main>
+    <!-- Footer -->
+    <footer class="border-t border-dark-700/60 py-4 px-6 text-center text-xs text-zinc-500">
+      Redunxt DPS Harni • Multi-User Client • Encrypted Client Session
+    </footer>
 
-  <!-- Footer -->
-  <footer class="border-t border-dark-600/60 py-4 px-6 text-center text-xs text-zinc-500">
-    Edunxt DPS Harni • Open Source Client • Direct API Integration
-  </footer>
+  </div>
 
   <script>
-    let globalData = { circulars: [], mailbox: [] };
+    let session = { token: null, student: null };
+    let dashboardData = { circulars: [], mailbox: [] };
     let currentTab = 'circulars';
 
-    async function fetchData(isManual = false) {
+    // 1. Check existing session on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const stored = localStorage.getItem('edunxt_session') || sessionStorage.getItem('edunxt_session');
+      if (stored) {
+        try {
+          session = JSON.parse(stored);
+          if (session.token) {
+            showDashboard();
+            return;
+          }
+        } catch {}
+      }
+      showLogin();
+    });
+
+    function togglePasswordVisibility() {
+      const pass = document.getElementById('loginPassword');
+      pass.type = pass.type === 'password' ? 'text' : 'password';
+    }
+
+    function showLogin() {
+      document.getElementById('loginView').classList.remove('hidden');
+      document.getElementById('dashboardView').classList.add('hidden');
+    }
+
+    function showDashboard() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('dashboardView').classList.remove('hidden');
+      
+      const s = session.student || {};
+      document.getElementById('studentBadge').innerText = `User #${s.userId || '-'} • Class ${s.classId || '-'} (${s.sectionId ? 'Sec ' + s.sectionId : ''})`;
+      fetchDashboardData();
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const userId = document.getElementById('loginUserId').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const remember = document.getElementById('rememberMe').checked;
+
+      const btnText = document.getElementById('loginBtnText');
+      const spinner = document.getElementById('loginSpinner');
+      const errBox = document.getElementById('loginError');
+
+      btnText.innerText = 'Verifying...';
+      spinner.classList.remove('hidden');
+      errBox.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, password }),
+        });
+
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json.error || 'Invalid User ID or Password.');
+        }
+
+        session = { token: json.token, student: json.student };
+        const storage = remember ? localStorage : sessionStorage;
+        storage.setItem('edunxt_session', JSON.stringify(session));
+
+        showDashboard();
+      } catch (err) {
+        errBox.innerText = err.message || 'Login failed. Please check your credentials.';
+        errBox.classList.remove('hidden');
+      } finally {
+        btnText.innerText = 'Sign In';
+        spinner.classList.add('hidden');
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('edunxt_session');
+      sessionStorage.removeItem('edunxt_session');
+      session = { token: null, student: null };
+      dashboardData = { circulars: [], mailbox: [] };
+      document.getElementById('loginPassword').value = '';
+      showLogin();
+    }
+
+    async function fetchDashboardData(isManual = false) {
       const btnText = document.getElementById('refreshText');
       const icon = document.getElementById('refreshIcon');
       if (isManual) {
@@ -159,23 +329,30 @@
       }
 
       try {
-        const res = await fetch('/api/data');
-        const json = await res.json();
+        const res = await fetch('/api/data', {
+          headers: {
+            'Authorization': `Bearer ${session.token}`,
+            'x-school-domain': session.student?.schoolDomain || 'dpsharni.edunext2.com',
+          }
+        });
 
-        if (!json.success) {
-          throw new Error(json.error || 'Failed to fetch data');
+        if (res.status === 401) {
+          handleLogout();
+          return;
         }
 
-        globalData = json;
-        renderAll();
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to fetch');
 
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('errorState').classList.add('hidden');
+        dashboardData = json;
+        renderData();
+
+        document.getElementById('dashLoading').classList.add('hidden');
+        document.getElementById('dashError').classList.add('hidden');
       } catch (err) {
-        console.error(err);
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('errorState').classList.remove('hidden');
-        document.getElementById('errorMessage').innerText = err.message || 'Connection Error';
+        document.getElementById('dashLoading').classList.add('hidden');
+        document.getElementById('dashError').classList.remove('hidden');
+        document.getElementById('dashErrorMessage').innerText = err.message;
       } finally {
         if (isManual) {
           btnText.innerText = 'Refresh';
@@ -184,15 +361,12 @@
       }
     }
 
-    function renderAll() {
-      // Header info
-      const s = globalData.student || {};
-      document.getElementById('studentInfo').innerText = `User #${s.userId || 'Student'} • Class ${s.classId || '-'} (${s.sectionId ? 'Sec ' + s.sectionId : ''})`;
-      document.getElementById('lastSyncTime').innerText = `Last updated: ${new Date(globalData.timestamp).toLocaleTimeString()}`;
+    function renderData() {
+      document.getElementById('lastSyncLabel').innerText = `Last updated: ${new Date(dashboardData.timestamp).toLocaleTimeString()}`;
 
-      // Counts
-      const circs = globalData.circulars || [];
-      const mails = globalData.mailbox || [];
+      const circs = dashboardData.circulars || [];
+      const mails = dashboardData.mailbox || [];
+
       document.getElementById('circularCount').innerText = circs.length;
       document.getElementById('mailCount').innerText = mails.length;
       document.getElementById('circularBadge').innerText = circs.length;
@@ -215,7 +389,7 @@
         const cleanDesc = (c.discription || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
         return `
-          <div class="rounded-2xl bg-dark-800/90 border border-dark-600/70 p-4 sm:p-5 flex flex-col gap-3 hover:border-dark-600 transition">
+          <div class="rounded-2xl bg-dark-900 border border-dark-700/80 p-4 sm:p-5 flex flex-col gap-3 hover:border-dark-600 transition">
             <div class="flex items-start justify-between gap-3">
               <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1">
@@ -225,7 +399,7 @@
                 <h3 class="text-sm sm:text-base font-bold text-white">${c.name}</h3>
               </div>
               ${pdf ? `
-                <a href="${pdf}" target="_blank" rel="noopener noreferrer" class="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition active:scale-95 shadow-md shadow-brand-500/20">
+                <a href="${pdf}" target="_blank" rel="noopener noreferrer" class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition active:scale-95 shadow-md shadow-brand-500/20">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                   <span>PDF</span>
                 </a>
@@ -249,11 +423,11 @@
         const avatar = m.employeename_img_path;
 
         return `
-          <div class="rounded-2xl bg-dark-800/90 border border-dark-600/70 p-4 sm:p-5 flex flex-col gap-3 hover:border-dark-600 transition">
+          <div class="rounded-2xl bg-dark-900 border border-dark-700/80 p-4 sm:p-5 flex flex-col gap-3 hover:border-dark-600 transition">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3">
-                ${avatar ? `<img src="${avatar}" class="w-9 h-9 rounded-full object-cover border border-dark-600" />` : `
-                  <div class="w-9 h-9 rounded-full bg-dark-700 border border-dark-600 flex items-center justify-center text-xs font-bold text-zinc-300">
+                ${avatar ? `<img src="${avatar}" class="w-9 h-9 rounded-full object-cover border border-dark-700" />` : `
+                  <div class="w-9 h-9 rounded-full bg-dark-800 border border-dark-700 flex items-center justify-center text-xs font-bold text-zinc-300">
                     ${(m.employeename || m.from || 'T').charAt(0)}
                   </div>
                 `}
@@ -262,7 +436,7 @@
                   <p class="text-[11px] text-zinc-500">${m.date}</p>
                 </div>
               </div>
-              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${m.status === 'Unread' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-dark-700 text-zinc-400'}">${m.status || 'Received'}</span>
+              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${m.status === 'Unread' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-dark-800 text-zinc-400'}">${m.status || 'Received'}</span>
             </div>
             <div>
               <h3 class="text-sm font-bold text-white mb-1">${m.subject}</h3>
@@ -300,15 +474,15 @@
     function filterContent() {
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
       if (!q) {
-        renderCirculars(globalData.circulars || []);
-        renderMailbox(globalData.mailbox || []);
+        renderCirculars(dashboardData.circulars || []);
+        renderMailbox(dashboardData.mailbox || []);
         return;
       }
 
-      const filteredCircs = (globalData.circulars || []).filter(c => 
+      const filteredCircs = (dashboardData.circulars || []).filter(c => 
         (c.name || '').toLowerCase().includes(q) || (c.discription || '').toLowerCase().includes(q)
       );
-      const filteredMail = (globalData.mailbox || []).filter(m => 
+      const filteredMail = (dashboardData.mailbox || []).filter(m => 
         (m.subject || '').toLowerCase().includes(q) || (m.employeename || m.from || '').toLowerCase().includes(q) || (m.message_html || '').toLowerCase().includes(q)
       );
 
@@ -316,28 +490,9 @@
       renderMailbox(filteredMail);
     }
 
-    // PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration error:', err));
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
-
-    // PWA Install prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const installBtn = document.getElementById('installBtn');
-      installBtn.classList.remove('hidden');
-      installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => {
-          installBtn.classList.add('hidden');
-        });
-      });
-    });
-
-    // Auto-fetch on load
-    fetchData();
   </script>
 </body>
 </html>
