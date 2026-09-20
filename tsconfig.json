@@ -7,8 +7,8 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "types": ["node"],
+    "outDir": "./dist"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "api/**/*"]
 }

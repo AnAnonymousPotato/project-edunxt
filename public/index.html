@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Edunxt - DPS Harni Portal</title>
+  <meta name="description" content="A fast, modern student dashboard for Edunext" />
+  <meta name="theme-color" content="#09090b" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="https://edunext-main-storage-cf.edunexttechnologies.com/dpsharni/school___static/1753341193153_1639023886720_dps_school_logo.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            dark: {
+              900: '#09090b',
+              800: '#121216',
+              700: '#18181f',
+              600: '#272733',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #272733; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-dark-900 text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-50 backdrop-blur-md bg-dark-900/80 border-b border-dark-600/60 px-4 py-3 sm:px-6">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <span class="text-white font-bold text-lg">E</span>
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+            Edunxt
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-100 border border-brand-500/30">DPS Harni</span>
+          </h1>
+          <p id="studentInfo" class="text-xs text-zinc-400">Loading student profile...</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="refreshBtn" onclick="fetchData(true)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-600 text-xs font-medium text-zinc-300 transition active:scale-95">
+          <svg id="refreshIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span id="refreshText">Refresh</span>
+        </button>
+
+        <button id="installBtn" class="hidden px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium transition shadow-sm active:scale-95">
+          📲 Install App
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+
+    <!-- Hero / Status Banner -->
+    <div class="rounded-2xl bg-gradient-to-br from-dark-800 to-dark-700/50 border border-dark-600/70 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+        <div>
+          <h2 class="text-sm font-semibold text-white">Live Student Synchronizer</h2>
+          <p id="lastSyncTime" class="text-xs text-zinc-400">Checking Edunext servers...</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-zinc-300">
+        <div class="bg-dark-900/60 px-3 py-1.5 rounded-xl border border-dark-600/60">
+          <span class="text-zinc-500">Circulars:</span>
+          <span id="circularCount" class="font-bold text-white ml-1">-</span>
+        </div>
+        <div class="bg-dark-900/60 px-3 py-1.5 rounded-xl border border-dark-600/60">
+          <span class="text-zinc-500">Messages:</span>
+          <span id="mailCount" class="font-bold text-white ml-1">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-dark-600/70 gap-2">
+      <button onclick="switchTab('circulars')" id="tab-circulars" class="px-4 py-2 text-sm font-semibold border-b-2 border-brand-500 text-white flex items-center gap-2 transition">
+        📢 Circulars
+        <span id="circularBadge" class="text-xs px-1.5 py-0.2 rounded-full bg-brand-500/20 text-brand-300">0</span>
+      </button>
+      <button onclick="switchTab('mailbox')" id="tab-mailbox" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 flex items-center gap-2 transition">
+        ✉️ Mailbox
+        <span id="mailBadge" class="text-xs px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-400">0</span>
+      </button>
+    </div>
+
+    <!-- Search / Filter Bar -->
+    <div class="relative">
+      <input type="text" id="searchInput" oninput="filterContent()" placeholder="Search notices, subjects, or teachers..." class="w-full bg-dark-800/80 border border-dark-600/80 rounded-xl px-4 py-2.5 pl-10 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition" />
+      <svg class="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="flex flex-col items-center justify-center py-16 text-zinc-400">
+      <svg class="w-8 h-8 animate-spin text-brand-500 mb-3" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+      </svg>
+      <p class="text-sm font-medium">Connecting to Edunext servers...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="hidden flex flex-col items-center justify-center py-12 p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center">
+      <p class="text-rose-400 font-semibold text-sm mb-1" id="errorMessage">Unable to fetch data.</p>
+      <p class="text-xs text-zinc-400 mb-4">Please verify your Vercel Environment Variables.</p>
+      <button onclick="fetchData(true)" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">Try Again</button>
+    </div>
+
+    <!-- Tab 1: Circulars Container -->
+    <div id="circularsContainer" class="hidden flex flex-col gap-3"></div>
+
+    <!-- Tab 2: Mailbox Container -->
+    <div id="mailboxContainer" class="hidden flex flex-col gap-3"></div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-dark-600/60 py-4 px-6 text-center text-xs text-zinc-500">
+    Edunxt DPS Harni • Open Source Client • Direct API Integration
+  </footer>
+
+  <script>
+    let globalData = { circulars: [], mailbox: [] };
+    let currentTab = 'circulars';
+
+    async function fetchData(isManual = false) {
+      const btnText = document.getElementById('refreshText');
+      const icon = document.getElementById('refreshIcon');
+      if (isManual) {
+        btnText.innerText = 'Syncing...';
+        icon.classList.add('animate-spin');
+      }
+
+      try {
+        const res = await fetch('/api/data');
+        const json = await res.json();
+
+        if (!json.success) {
+          throw new Error(json.error || 'Failed to fetch data');
+        }
+
+        globalData = json;
+        renderAll();
+
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('errorState').classList.add('hidden');
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('errorState').classList.remove('hidden');
+        document.getElementById('errorMessage').innerText = err.message || 'Connection Error';
+      } finally {
+        if (isManual) {
+          btnText.innerText = 'Refresh';
+          icon.classList.remove('animate-spin');
+        }
+      }
+    }
+
+    function renderAll() {
+      // Header info
+      const s = globalData.student || {};
+      document.getElementById('studentInfo').innerText = `User #${s.userId || 'Student'} • Class ${s.classId || '-'} (${s.sectionId ? 'Sec ' + s.sectionId : ''})`;
+      document.getElementById('lastSyncTime').innerText = `Last updated: ${new Date(globalData.timestamp).toLocaleTimeString()}`;
+
+      // Counts
+      const circs = globalData.circulars || [];
+      const mails = globalData.mailbox || [];
+      document.getElementById('circularCount').innerText = circs.length;
+      document.getElementById('mailCount').innerText = mails.length;
+      document.getElementById('circularBadge').innerText = circs.length;
+      document.getElementById('mailBadge').innerText = mails.length;
+
+      renderCirculars(circs);
+      renderMailbox(mails);
+      showTab(currentTab);
+    }
+
+    function renderCirculars(list) {
+      const container = document.getElementById('circularsContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-zinc-500 text-sm">No circulars found.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map((c, i) => {
+        const pdf = c.attachment?.image_array?.[0]?.cloud_front_serving_url || c.attachment?.image_array?.[0]?.servingUrl;
+        const cleanDesc = (c.discription || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+        return `
+          <div class="rounded-2xl bg-dark-800/90 border border-dark-600/70 p-4 sm:p-5 flex flex-col gap-3 hover:border-dark-600 transition">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-brand-500/20 text-brand-300 border border-brand-500/30">${c.date}</span>
+                  ${i === 0 ? '<span class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">LATEST</span>' : ''}
+                </div>
+                <h3 class="text-sm sm:text-base font-bold text-white">${c.name}</h3>
+              </div>
+              ${pdf ? `
+                <a href="${pdf}" target="_blank" rel="noopener noreferrer" class="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition active:scale-95 shadow-md shadow-brand-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  <span>PDF</span>
+                </a>
+              ` : ''}
+            </div>
+            ${cleanDesc ? `<p class="text-xs text-zinc-400 line-clamp-3 leading-relaxed">${cleanDesc}</p>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderMailbox(list) {
+      const container = document.getElementById('mailboxContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-zinc-500 text-sm">No mailbox messages found.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(m => {
+        const cleanBody = (m.message_html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const avatar = m.employeename_img_path;
+
+        return `
+          <div class="rounded-2xl bg-dark-800/90 border border-dark-600/70 p-4 sm:p-5 flex flex-col gap-3 hover:border-dark-600 transition">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                ${avatar ? `<img src="${avatar}" class="w-9 h-9 rounded-full object-cover border border-dark-600" />` : `
+                  <div class="w-9 h-9 rounded-full bg-dark-700 border border-dark-600 flex items-center justify-center text-xs font-bold text-zinc-300">
+                    ${(m.employeename || m.from || 'T').charAt(0)}
+                  </div>
+                `}
+                <div>
+                  <h4 class="text-xs font-semibold text-zinc-300">${m.employeename || m.from}</h4>
+                  <p class="text-[11px] text-zinc-500">${m.date}</p>
+                </div>
+              </div>
+              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${m.status === 'Unread' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-dark-700 text-zinc-400'}">${m.status || 'Received'}</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white mb-1">${m.subject}</h3>
+              <p class="text-xs text-zinc-400 line-clamp-4 leading-relaxed">${cleanBody}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      showTab(tab);
+    }
+
+    function showTab(tab) {
+      const circContainer = document.getElementById('circularsContainer');
+      const mailContainer = document.getElementById('mailboxContainer');
+      const tabCircBtn = document.getElementById('tab-circulars');
+      const tabMailBtn = document.getElementById('tab-mailbox');
+
+      if (tab === 'circulars') {
+        circContainer.classList.remove('hidden');
+        mailContainer.classList.add('hidden');
+        tabCircBtn.className = 'px-4 py-2 text-sm font-semibold border-b-2 border-brand-500 text-white flex items-center gap-2 transition';
+        tabMailBtn.className = 'px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 flex items-center gap-2 transition';
+      } else {
+        circContainer.classList.add('hidden');
+        mailContainer.classList.remove('hidden');
+        tabMailBtn.className = 'px-4 py-2 text-sm font-semibold border-b-2 border-brand-500 text-white flex items-center gap-2 transition';
+        tabCircBtn.className = 'px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 flex items-center gap-2 transition';
+      }
+    }
+
+    function filterContent() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!q) {
+        renderCirculars(globalData.circulars || []);
+        renderMailbox(globalData.mailbox || []);
+        return;
+      }
+
+      const filteredCircs = (globalData.circulars || []).filter(c => 
+        (c.name || '').toLowerCase().includes(q) || (c.discription || '').toLowerCase().includes(q)
+      );
+      const filteredMail = (globalData.mailbox || []).filter(m => 
+        (m.subject || '').toLowerCase().includes(q) || (m.employeename || m.from || '').toLowerCase().includes(q) || (m.message_html || '').toLowerCase().includes(q)
+      );
+
+      renderCirculars(filteredCircs);
+      renderMailbox(filteredMail);
+    }
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration error:', err));
+    }
+
+    // PWA Install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('installBtn');
+      installBtn.classList.remove('hidden');
+      installBtn.addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          installBtn.classList.add('hidden');
+        });
+      });
+    });
+
+    // Auto-fetch on load
+    fetchData();
+  </script>
+</body>
+</html>
