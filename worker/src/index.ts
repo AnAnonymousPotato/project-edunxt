@@ -2,7 +2,7 @@
  * Redunxt - 5-Minute Background Notification Engine
  * Hosted on Cloudflare Workers (100% Free Tier)
  * 
- * Scheduled Cron: */5 * * * * (runs every 5 minutes)
+ * Scheduled Cron: Every 5 minutes (runs 24/7)
  * Dispatches instant notifications to Telegram with PDF attachments for new school circulars.
  */
 
