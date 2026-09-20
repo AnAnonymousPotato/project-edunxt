@@ -157,8 +157,25 @@ export class EdunextClient {
       };
     }
 
-    const res = await this.request<MailboxResponse>('/rest/v4/student/Studentinboxnew', 'GET');
-    return res.data?.list || [];
+    const firstPage = await this.request<MailboxResponse>('/rest/v4/student/Studentinboxnew?limit=1', 'GET');
+    let list = firstPage.data?.list || [];
+    const total = firstPage.data?.__total__ || list.length;
+    const totalPages = Math.ceil(total / 20);
+
+    if (totalPages > 1) {
+      const promises: Promise<MailboxResponse>[] = [];
+      for (let p = 2; p <= totalPages; p++) {
+        promises.push(this.request<MailboxResponse>(`/rest/v4/student/Studentinboxnew?limit=${p}`, 'GET'));
+      }
+      const pages = await Promise.all(promises);
+      for (const page of pages) {
+        if (page.data?.list) {
+          list = list.concat(page.data.list);
+        }
+      }
+    }
+
+    return list;
   }
 
   public async getAttendance(): Promise<unknown> {

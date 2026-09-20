@@ -34,13 +34,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       'Authorization': `Bearer ${token}`,
     };
 
-    // Fetch Circulars and Mailbox in parallel
+    // Fetch Circulars and First page of Mailbox in parallel
     const [circRes, mailRes] = await Promise.all([
       fetch('https://m1.edubac.com/rest/v4/student/getcirculardata', {
         headers,
         signal: AbortSignal.timeout(12000),
       }),
-      fetch('https://m1.edubac.com/rest/v4/student/Studentinboxnew', {
+      fetch('https://m1.edubac.com/rest/v4/student/Studentinboxnew?limit=1', {
         headers,
         signal: AbortSignal.timeout(12000),
       }),
@@ -56,6 +56,30 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const circData = (await circRes.json().catch(() => ({}))) as any;
     const mailData = (await mailRes.json().catch(() => ({}))) as any;
 
+    let mailboxList: any[] = mailData.data?.list || [];
+    const totalMailCount: number = mailData.data?.__total__ || mailboxList.length;
+    const totalPages = Math.ceil(totalMailCount / 20);
+
+    // If there are additional pages, fetch them in parallel and preserve order
+    if (totalPages > 1) {
+      const pagePromises: Promise<any[]>[] = [];
+      for (let p = 2; p <= totalPages; p++) {
+        pagePromises.push(
+          fetch(`https://m1.edubac.com/rest/v4/student/Studentinboxnew?limit=${p}`, {
+            headers,
+            signal: AbortSignal.timeout(12000),
+          })
+            .then((r) => r.json())
+            .then((d) => (d.data?.list as any[]) || [])
+            .catch(() => [])
+        );
+      }
+      const remainingPages = await Promise.all(pagePromises);
+      for (const pageItems of remainingPages) {
+        mailboxList = mailboxList.concat(pageItems);
+      }
+    }
+
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-store');
@@ -63,7 +87,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       success: true,
       timestamp: new Date().toISOString(),
       circulars: circData.data?.circularlist || [],
-      mailbox: mailData.data?.list || [],
+      mailbox: mailboxList,
+      totalMailCount,
     }));
   } catch (err: any) {
     res.statusCode = 500;
