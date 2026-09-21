@@ -1,4 +1,14 @@
-import { AuthResponse, CircularItem, MailboxItem, DecodedToken } from './types.js';
+import {
+  AuthResponse,
+  CircularItem,
+  MailboxItem,
+  DecodedToken,
+  HomeworkAssignment,
+  SubjectMeta,
+  SchoolNewsItem,
+  AttachmentImage,
+  StudentBundle,
+} from './types.js';
 
 export class EdunextClient {
   private baseUrl = 'https://m1.edubac.com';
@@ -178,19 +188,138 @@ export class EdunextClient {
     return list;
   }
 
-  public async getAttendance(): Promise<unknown> {
-    return this.request('/rest/v4/student/getStudentAttendanceCalander', 'GET');
+  public async getHomework(): Promise<{ assignments: HomeworkAssignment[]; subjects: SubjectMeta[] }> {
+    interface RawHomeworkResponse {
+      success: boolean;
+      data?: {
+        assgmentData?: Array<{
+          assignmentid: number;
+          assignmentname: string;
+          subjectname?: string;
+          description?: string;
+          assignBy?: string;
+          cretedon?: string;
+          deadlineDate?: string;
+          deadlinetime?: string;
+          submission_required?: boolean;
+          assignmenttypesName?: string;
+          attachment?: string;
+        }>;
+        subjectList?: Array<{
+          id: number;
+          name: string;
+          code: string;
+          classid: number;
+          includeincgpa?: boolean;
+          excludeinattendance?: boolean;
+          isnegative_marking?: boolean;
+          isoptional?: boolean;
+        }>;
+      };
+    }
+
+    const res = await this.request<RawHomeworkResponse>('/rest/v4/student/studentHomework', 'GET');
+    const rawList = res.data?.assgmentData || [];
+    const rawSubjects = res.data?.subjectList || [];
+
+    const assignments: HomeworkAssignment[] = rawList.map((item) => {
+      let atts: AttachmentImage[] = [];
+      if (item.attachment) {
+        try {
+          const obj = typeof item.attachment === 'string' ? JSON.parse(item.attachment) : item.attachment;
+          let imgArr = obj?.image_array;
+          if (typeof imgArr === 'string') imgArr = JSON.parse(imgArr);
+          if (Array.isArray(imgArr)) atts = imgArr as AttachmentImage[];
+        } catch {}
+      }
+
+      return {
+        id: item.assignmentid,
+        title: item.assignmentname || 'Untitled Assignment',
+        subject: item.subjectname || 'General',
+        description: item.description || '',
+        assignedBy: item.assignBy || 'Teacher',
+        createdOn: item.cretedon || '',
+        deadlineDate: item.deadlineDate || '',
+        deadlineTime: item.deadlinetime || '',
+        submissionRequired: Boolean(item.submission_required),
+        type: item.assignmenttypesName || 'Homework',
+        attachments: atts,
+      };
+    });
+
+    const subjects: SubjectMeta[] = rawSubjects.map((s) => ({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      classId: s.classid,
+      includeInCgpa: Boolean(s.includeincgpa),
+      excludeInAttendance: Boolean(s.excludeinattendance),
+      isNegativeMarking: Boolean(s.isnegative_marking),
+      isOptional: Boolean(s.isoptional),
+    }));
+
+    return { assignments, subjects };
   }
 
-  public async getHomework(): Promise<unknown> {
-    return this.request('/rest/v4/student/studentHomework', 'GET');
+  public async getSchoolNews(): Promise<SchoolNewsItem[]> {
+    interface RawNewsResponse {
+      success: boolean;
+      data?: {
+        schoolnewslist?: Array<{
+          id: string;
+          newssubject: string;
+          newssdescription?: string;
+          newsdate: string;
+          creationdatetime?: string;
+          employeename?: string;
+          employeeimage?: string;
+          filepath?: string;
+          filename?: string;
+        }>;
+      };
+    }
+
+    const res = await this.request<RawNewsResponse>('/rest/v4/student/getstudentnews', 'GET');
+    const list = res.data?.schoolnewslist || [];
+
+    return list.map((item) => {
+      let mediaUrl: string | undefined;
+      if (item.filepath) {
+        try {
+          const parsed = typeof item.filepath === 'string' ? JSON.parse(item.filepath) : item.filepath;
+          mediaUrl = parsed?.cloud_front_serving_url || parsed?.servingUrl;
+        } catch {}
+      }
+
+      return {
+        id: String(item.id),
+        subject: item.newssubject || 'Notice',
+        description: item.newssdescription || '',
+        date: item.newsdate || '',
+        createdDateTime: item.creationdatetime,
+        author: item.employeename || 'Administration',
+        mediaFile: item.filename,
+        mediaUrl,
+      };
+    });
   }
 
-  public async getSchoolNews(): Promise<unknown> {
-    return this.request('/rest/v4/student/getstudentnews', 'GET');
-  }
+  public async getCompleteStudentBundle(): Promise<StudentBundle> {
+    const [circResult, mailResult, hwResult, newsResult] = await Promise.allSettled([
+      this.getCirculars(),
+      this.getMailbox(),
+      this.getHomework(),
+      this.getSchoolNews(),
+    ]);
 
-  public async getTimetable(): Promise<unknown> {
-    return this.request('/rest/v4/student/getstudentTimeTable', 'GET');
+    return {
+      student: this.getDecodedToken(),
+      circulars: circResult.status === 'fulfilled' ? circResult.value : [],
+      mailbox: mailResult.status === 'fulfilled' ? mailResult.value : [],
+      homework: hwResult.status === 'fulfilled' ? hwResult.value : { assignments: [], subjects: [] },
+      news: newsResult.status === 'fulfilled' ? newsResult.value : [],
+      timestamp: new Date().toISOString(),
+    };
   }
 }

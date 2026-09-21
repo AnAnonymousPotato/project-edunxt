@@ -71,3 +71,53 @@ export interface EdunextCredentials {
   schoolDomain: string;
   token?: string;
 }
+
+export interface HomeworkAssignment {
+  id: number;
+  subject: string;
+  title: string;
+  description: string;
+  assignedBy: string;
+  createdOn: string;
+  deadlineDate?: string;
+  deadlineTime?: string;
+  submissionRequired: boolean;
+  type: string;
+  attachments: AttachmentImage[];
+}
+
+export interface SubjectMeta {
+  id: number;
+  name: string;
+  code: string;
+  classId: number;
+  includeInCgpa: boolean;
+  excludeInAttendance: boolean;
+  isNegativeMarking: boolean;
+  isOptional: boolean;
+}
+
+export interface SchoolNewsItem {
+  id: string;
+  subject: string;
+  description: string;
+  date: string;
+  createdDateTime?: string;
+  author: string;
+  employeeImage?: string;
+  mediaFile?: string;
+  mediaUrl?: string;
+}
+
+export interface StudentBundle {
+  student: DecodedToken | null;
+  circulars: CircularItem[];
+  mailbox: MailboxItem[];
+  homework: {
+    assignments: HomeworkAssignment[];
+    subjects: SubjectMeta[];
+  };
+  news: SchoolNewsItem[];
+  timestamp: string;
+}
+
